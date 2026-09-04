@@ -24,6 +24,10 @@ class TaskCreateShema(BaseModel):
     title: str
 
 
+class BookShema(BaseModel):
+    book: str
+
+
 tasks: list[TaskShema] = []
 
 
@@ -38,3 +42,20 @@ def create_task(payload: TaskCreateShema) -> TaskShema:
 
     tasks.append(new_task)
     return new_task
+
+
+book = ""
+
+
+@app.get("/book")
+def get_book():
+    if book:
+        return {"message": f"Любимая книга: {book}"}
+    return {"message": "Книга не задана"}
+
+
+@app.post("/book")
+def set_book(payload: BookShema):
+    global book
+    book = payload.book
+    return {"message": f"Книга '{book}' сохранена"}
