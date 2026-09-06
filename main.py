@@ -56,14 +56,18 @@ def update_task(task_id: str, payload: TaskUpdateShema):
                 task.title = payload.title
             if payload.completed is not None:
                 task.completed = payload.completed
-
             return task
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Задача не найдена")
 
 @app.delete('/tasks/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: str):
     for task in tasks:
         if task.id == task_id:
             tasks.remove(task)
+            return
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Задача не найдена")
 
 
 #КАТЕГОРИИ
@@ -103,8 +107,9 @@ def update_category(category_id: str, payload: CategoryUpdateShema):
         if category.id == category_id:
             if payload.name:
                 category.name = payload.name
-
             return category
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Коллекция не найдена")
 
 
 @app.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -112,3 +117,6 @@ def delete_category(category_id: str):
     for category in categories:
         if category.id == category_id:
             categories.remove(category)
+            return
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Коллекция не найдена")
