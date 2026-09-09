@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
-from fastapi import FastAPI, status, HTTPException, Depends
+from fastapi import FastAPI, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import create_engine, select
@@ -21,6 +21,12 @@ class TaskORM(Base):
 
     title: Mapped[str]
     completed: Mapped[bool] = mapped_column(default=False)
+
+
+class CategotyORM(Base):
+    __tablename__ = "categories"
+
+    name: Mapped[str]
 
 
 @asynccontextmanager
@@ -87,7 +93,7 @@ def update_task(task_id: str, payload: TaskUpdateShema, db: Session = Depends(ge
     task_for_update = db.get(TaskORM, task_id)
     if payload.title:
         task_for_update.title = payload.title
-    if payload.completed:
+    if payload.completed is not None:
         task_for_update.completed = payload.completed
 
     db.commit()
@@ -116,37 +122,37 @@ class CategoryUpdateShema(BaseModel):
     name: str
 
 
-categories: list[CategoryShema] = []
+def category_orm_model(category_orm: CategotyORM) -> CategoryShema:
+    return CategoryShema(id=category_orm.id, name=category_orm.name)
 
 
 @app.get("/categories")
-def read_category() -> list[CategoryShema]:
-    return categories
+def read_category(db: Session = Depends(get_db)) -> list[CategoryShema]:
+    category_from_bd = db.scalars(select(CategotyORM)).all()
+    return [category_orm_model(category) for category in category_from_bd]
 
 @app.post("/categories", status_code=status.HTTP_201_CREATED)
-def create_category(payload: CategoryCreateShema) -> CategoryShema:
-    new_category = CategoryShema(id = str(uuid4()), name = payload.name)
+def create_category(payload: CategoryCreateShema, db: Session = Depends(get_db)) -> CategoryShema:
+    new_category = CategotyORM(name = payload.name)
+    db.add(new_category)
+    db.commit()
 
-    categories.append(new_category)
-    return new_category
+    return category_orm_model(new_category)
 
 
 @app.patch("/categories/{category_id}")
-def update_category(category_id: str, payload: CategoryUpdateShema):
-    for category in categories:
-        if category.id == category_id:
-            if payload.name:
-                category.name = payload.name
-            return category
+def update_category(category_id: str, payload: CategoryUpdateShema, db: Session = Depends(get_db)) -> CategoryShema:
+    category_for_update = db.get(CategotyORM, category_id)
+    if payload.name:
+        category_for_update.name = payload.name
+    db.commit()
 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Коллекция не найдена")
+    return category_orm_model(category_for_update)
+
 
 
 @app.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_category(category_id: str):
-    for category in categories:
-        if category.id == category_id:
-            categories.remove(category)
-            return
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Коллекция не найдена")
+def delete_category(category_id: str, db: Session = Depends(get_db)) -> None:
+    category_for_delete = db.get(CategotyORM, category_id)
+    db.delete(category_for_delete)
+    db.commit()
