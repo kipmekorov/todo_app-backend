@@ -4,17 +4,17 @@ from sqlalchemy.orm import Session
 from app.models.category import CategotyORM
 
 
-class CategoryRepository():
+class CategoryRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
     def get_all(self) -> list[CategotyORM]:
-        return self.db.scalars(select(CategotyORM))
+        return list(self.db.scalars(select(CategotyORM)).all())
 
-    def get_by_id(self, category_id: int) -> CategotyORM:
+    def get_by_id(self, category_id: str) -> CategotyORM | None:
         return self.db.get(CategotyORM, category_id)
 
-    def create(self, name: str) -> CategotyORM:
+    def create(self, name: str) -> CategotyORM | None:
         new_category = CategotyORM(name=name)
         self.db.add(new_category)
         return new_category

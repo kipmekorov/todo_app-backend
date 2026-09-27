@@ -13,4 +13,4 @@ class CategoryCreateSchema(BaseModel):
 
 
 class CategoryUpdateSchema(BaseModel):
-    name: str | None=None
+    name: str | None = None
