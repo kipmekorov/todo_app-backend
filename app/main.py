@@ -27,7 +27,6 @@ app.add_middleware(
 
 
 request_number = 0
-a = ""
 
 
 @app.middleware(
@@ -37,7 +36,6 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
     started_at = perf_counter()
     global request_number
     try:
-        print("ПРИШЕЛ ЗАПРОС:", request.method, request.url.path)
         request_number += 1
         response: Response = await call_next(request)  # Работа самого эндпоинта
     except Exception:
